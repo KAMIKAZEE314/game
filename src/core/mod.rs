@@ -1,6 +1,8 @@
 #![allow(unused)]
 use rand::{Rng, rngs::ThreadRng};
 
+pub mod player;
+
 #[derive(Debug)]
 pub struct Floor {
     enemys: Vec<Enemy>,
@@ -16,6 +18,8 @@ impl Floor {
             next_floor_loot
         }
     }
+
+    pub fn get_enemys(&mut self) -> &mut [Enemy] {&mut self.enemys}
 
     pub fn generate_floor(level: &u32, loot: Loot, mut rng: &mut ThreadRng) -> Self {
         let num_enemys = rng.gen_range(1..=3);
@@ -86,22 +90,26 @@ pub enum EnemyType {
 
 #[derive(Debug)]
 pub struct Enemy {
-    health: i32,
-    damage: i32,
+    id: u32,
+    health: u32,
+    damage: u32,
     level: u32, // scaling for the health and damage
     enemy_type: EnemyType
     // ToDo: add some parameters, when building the AI for the enemys
 }
 
 impl Enemy {
-    pub fn new(health: i32, damage: i32, level: u32, enemy_type: EnemyType) -> Self {
+    pub fn new(id: u32, health: u32, damage: u32, level: u32, enemy_type: EnemyType) -> Self {
         Self {
+            id,
             health,
             damage,
             level,
             enemy_type
         }
     }
+
+    pub fn get_id(&self) -> &u32 {&self.id}
 
     pub fn generate_enemy(level: &u32, enemy_type: EnemyType, rng: &mut ThreadRng) -> Self {
         let mut base_health: u32;
@@ -135,9 +143,17 @@ impl Enemy {
             }
         };
 
-        let health = ((base_health as i32 + (rng.gen_range(-3..=3)*5)) as f64 * (1.0 + *level as f64 / 20.0)).round() as i32;
-        let damage = ((base_damage as i32 + (rng.gen_range(-3..=3)*2)) as f64 * (1.0 + *level as f64 / 20.0)).round() as i32;
+        let health = ((base_health as i32 + (rng.gen_range(-3..=3)*5)) as f64 * (1.0 + *level as f64 / 20.0)).round() as u32;
+        let damage = ((base_damage as i32 + (rng.gen_range(-3..=3)*2)) as f64 * (1.0 + *level as f64 / 20.0)).round() as u32;
 
-        Enemy::new(health, damage, *level, enemy_type)
+        Enemy::new(health * damage * *level * rng.gen_range(0..=100000), health, damage, *level, enemy_type)
     }
+
+    pub fn compare_id(&self, id: &u32) -> bool {
+        if self.id == *id {
+            true
+        } else {
+            false
+        }
+    } 
 }
