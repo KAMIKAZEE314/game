@@ -1,4 +1,6 @@
 #![allow(unused)]
+use std::fmt::format;
+
 use rand::{Rng, rngs::ThreadRng};
 
 pub mod player;
@@ -19,7 +21,25 @@ impl Floor {
         }
     }
 
-    pub fn get_enemys(&mut self) -> &mut [Enemy] {&mut self.enemys}
+    pub fn get_mut_enemys(&mut self) -> &mut [Enemy] {&mut self.enemys}
+    pub fn get_enemys(&self) -> &[Enemy] {&self.enemys}
+    pub fn get_text_format(&self) -> String{
+        let mut text_format = String::new();
+
+        for enemy in self.get_enemys() {
+            text_format.push_str(&format!("{}!", enemy.get_text_format()));
+        }
+        text_format.push_str("§");
+
+        text_format.push_str(&format!("{}§", self.loot.get_text_format()));
+
+        for loot in self.next_floor_loot.iter() {
+            text_format.push_str(&format!("{},", loot.get_text_format()));
+        }
+        text_format.push_str("§");
+
+        text_format
+    }
 
     pub fn generate_floor(level: &u32, loot: Loot, mut rng: &mut ThreadRng) -> Self {
         let num_enemys = rng.gen_range(1..=3);
@@ -66,6 +86,28 @@ impl Loot {
         }
     }
 
+    pub fn get_text_format(&self) -> String {
+        let mut text_format = String::new();
+
+        text_format.push_str(
+            match &self.loot_type {
+                LootType::MiB => "M",
+                LootType::Upgrade => "U",
+                LootType::GithubTokens => "G"
+        });
+        text_format.push_str(",");
+
+        match &self.loot_amount {
+            Some(amount) => {
+                text_format.push_str("S ");
+                text_format.push_str(&format!("{}", *amount));
+            },
+            None => {text_format.push_str("N");}
+        }
+
+        text_format
+    }
+
     pub fn generate_loot(level: u32, rng: &mut ThreadRng) -> Self {
         let loot_types = [LootType::MiB, LootType::GithubTokens, LootType::Upgrade];
         let loot_type = loot_types[rng.gen_range(0..loot_types.len()) as usize];
@@ -110,6 +152,18 @@ impl Enemy {
     }
 
     pub fn get_id(&self) -> &u32 {&self.id}
+    pub fn get_text_format(&self) -> String {
+        let mut text_format = String::from(&format!("{},{},{},{},", self.id, self.health, self.damage, self.level));
+        text_format.push_str(match &self.enemy_type {
+            EnemyType::DamageDealer => {"Da"},
+            EnemyType::Debuffer => {"De"},
+            EnemyType::Spawner => {"Sp"},
+            EnemyType::Supporter => {"Su"},
+            EnemyType::Tank => {"Ta"}
+        });
+
+        text_format
+    }
 
     pub fn generate_enemy(level: &u32, enemy_type: EnemyType, rng: &mut ThreadRng) -> Self {
         let mut base_health: u32;
